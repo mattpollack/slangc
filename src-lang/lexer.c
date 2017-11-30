@@ -36,6 +36,7 @@ void token_print(token_t token) {
     case OPEN_BRACKET: printf("["); break;
     case CLOSE_BRACKET:printf("]"); break;
     case VBAR:         printf("|"); break;
+    case OPTION:       printf("?"); break;
 	
     case UNDERSCORE:   printf("_"); break;
 	
@@ -66,7 +67,6 @@ static token_type_t reserved_list[] = {
     {.type = FUNC,           .string = "func"},
     {.type = DEF,            .string = "def"},
     {.type = LET,            .string = "let"},
-    {.type = IN,             .string = "in"},
     {.type = IF,             .string = "if"},
     {.type = EL,             .string = "el"},
 
@@ -79,15 +79,18 @@ static token_type_t token_list[] = {
     {.type = GRE,            .string = ">="},
     {.type = LEE,            .string = "<="},
     
+    {.type = IN,             .string = "in"},
+    
     {.type = OPEN_PAREN,     .string = "("},
     {.type = CLOSE_PAREN,    .string = ")"},
     
     {.type = OPEN_BRACE,     .string = "{"},
     {.type = CLOSE_BRACE,    .string = "}"},
     
-    {.type = CLOSE_BRACKET,  .string = "["},
-    {.type = OPEN_BRACKET,   .string = "]"},
+    {.type = OPEN_BRACKET,   .string = "["},
+    {.type = CLOSE_BRACKET,  .string = "]"},
     {.type = VBAR,           .string = "|"},
+    {.type = OPTION,         .string = "?"},
     
     {.type = UNDERSCORE,     .string = "_"},
     

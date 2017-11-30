@@ -1,8 +1,10 @@
+#include <string.h>
 #include "parser.h"
 #include "lexer.h"
 
 parser_t * parser_create(char * raw) {
     parser_t * res = malloc(sizeof(parser_t));
+    res->error = false;
     res->lexer = lexer_create();
     res->lexer->buffer = raw;
     res->buffer = 0;
@@ -22,105 +24,117 @@ void parser_destroy(parser_t * parser) {
 #define LEXER_PEEK lexer_peek(parser->lexer)
 #define LEXER_NEXT_IF(t) lexer_next_if(parser->lexer, (t))
 
-// Defines a function that returns an error type
-// Uses typeof to typedef the return type of the anonymous choice type
-#define PARSER_F(type, body)				     \
-    error_t(type ## _t) parse_ ## type (parser_t * parser) { \
-	typedef typeof( parse_ ## type(parser)) __r_t__;     \
-	(body);						     \
+#define ERROR_SET(msg)				\
+    parser->error = true;			\
+    parser->error_msg = (msg)
+#define ERROR_BREAK				\
+    if (parser->error)				\
+	break
+
+static match_body_t parse_match_body(parser_t * parser) {
+    match_body_t res;
+    
+    ERROR_SET("TODO: match_body");
+    
+    return res;
+}
+
+static signature_t * parse_signature(parser_t * parser) {
+    signature_t * res = malloc(sizeof(signature_t));
+    res->next = 0;
+
+    if /**/ (LEXER_NEXT_IF(OPEN_PAREN)) {
+	res->type = SIG_FUNC;
+	res->body = 0;
+        
+	signature_t * ptr = 0;
+	
+	while (!LEXER_NEXT_IF(CLOSE_PAREN)) {
+	    if (ptr == 0) {
+		res->body = parse_signature(parser);
+		ptr = res->body;
+	    }
+	    else {
+		ptr->next = parse_signature(parser);
+		ptr = ptr->next;
+	    }
+
+	    ERROR_BREAK;
+	}
+
+	if (parser->error) {
+	    while (res->body != 0) {
+		ptr = res->body->next;
+		free(res->body);
+		res->body = ptr;
+	    }
+	}
+    }
+    else if (LEXER_NEXT_IF(OPEN_BRACKET)) {
+	res->type = SIG_LIST;
+	res->body = parse_signature(parser);
+	
+	if (!parser->error && !LEXER_NEXT_IF(CLOSE_BRACKET)) {
+	    ERROR_SET("List signature must end with a close bracket");
+	}
+    }
+    else if (LEXER_PEEK.type == IDENTIFIER) {
+	res->type = SIG_IDENTIFIER;
+	res->identifier = LEXER_NEXT;
+    }
+    else {
+	ERROR_SET("Unexpected token when parsing signature");
     }
 
-#define PARSER_RET(d) (__r_t__) {.type=CHOICE_0,.d0=(d)}
-#define PARSER_MSG(m) (__r_t__) {.type=CHOICE_1,.d1=(m)}
+    if (parser->error) {
+	free(res);
+	return 0;
+    }
 
-// TODO begin
-PARSER_F(namespace,   { return PARSER_MSG("TODO parse namespace"); });
-PARSER_F(application, { return PARSER_MSG("TODO parse application"); });
-PARSER_F(match,       { return PARSER_MSG("TODO parse match"); });
-// TODO end
+    res->option = LEXER_NEXT_IF(OPTION);
+    
+    return res;
+}
 
-PARSER_F(
-    match_body, {
-	return PARSER_MSG("TODO parse match body");
-    });
+static function_t parse_function(parser_t * parser) {
+    function_t res;
+    res.signature = parse_signature(parser);
 
-PARSER_F(
-    signature, {
-	return PARSER_MSG("TODO parse signature");
-    });
+    if (parser->error)
+	return res;
 
-PARSER_F(
-    function, {
-	if (LEXER_PEEK.type != OPEN_PAREN) {
-	    return PARSER_MSG("Expected open paren to begin signature");
-	}
-	
-	AUTO(signature, parse_signature(parser));
-	
-	if (is_error(signature)) {
-	    return PARSER_MSG(signature.d1);
-	}
+    res.body = parse_match_body(parser);
 
-	// switch on nature of body
-	// assume only match body for now
-	
-	AUTO(body, parse_match_body(parser));
-
-	if (is_error(body)) {
-	    return PARSER_MSG(body.d1);
-	}
-	
-	return PARSER_RET(((function_t) { signature.d0, body.d0 }));
-    });
-
-#define BREAK_ERROR error = true; break
+    return res;
+}
 
 ast_t * parser_parse(parser_t * parser) {
-    bool error = false;
-    ast_t *ast = ast_create();
+    ast_t * ast = ast_create();
 
-    while (!LEXER_NEXT_IF(BUFFER_END)) {
-	if (LEXER_NEXT_IF(FUNC)) {
-	    if (LEXER_PEEK.type != IDENTIFIER) {
-		printf("Expected identifier\n");
-		BREAK_ERROR;
-	    }
-
-	    token_t identifier = LEXER_NEXT;
-
-	    AUTO(f, parse_function(parser));
-
-	    if (is_error(f)) {
-		printf("%s\n", f.d1);
-	        BREAK_ERROR;
-	    }
-
-	    ast_push(ast, (base_t) { identifier, AST_FUNCTION, .f = f.d0 });
-	}
-	else if (LEXER_NEXT_IF(NAMESPACE)) {
-	    if (LEXER_PEEK.type != IDENTIFIER) {
-		printf("Expected identifier\n");
-		BREAK_ERROR;
-	    }
-
-	    token_t identifier = LEXER_NEXT;
-
-	    AUTO(n, parse_namespace(parser));
-
-	    if (is_error(n)) {
-		printf("%s", n.d1);
-		BREAK_ERROR;
-	    }
-
-	    ast_push(ast, (base_t) { identifier, AST_NAMESPACE, .n = n.d0 });
-	}
+    while (!LEXER_NEXT_IF(BUFFER_END) && !parser->error) {
+	base_t node;
 	
-	printf("Unexpected parser end\n");
-	BREAK_ERROR;
+	if /**/ (LEXER_NEXT_IF(FUNC)) {
+	    if (LEXER_PEEK.type != IDENTIFIER) {
+		ERROR_SET("Expected identifier");
+		break;
+	    }
+	    
+	    node.identifier = LEXER_NEXT;
+	    node.type       = AST_FUNCTION;
+	    node.f          = parse_function(parser);
+	}
+	else {
+	    ERROR_SET("Unexpected token at base level");
+	}
+
+	ERROR_BREAK;
+
+	ast_push(ast, node);
     }
 
-    if (error) {
-        ast_destroy(ast);
+    if (parser->error) {
+	ast_destroy(ast);
 	
 	return 0;
     }

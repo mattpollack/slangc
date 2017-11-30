@@ -22,10 +22,11 @@
 	};					\
     }
 
-
+// Typeless
 #define AUTO(n, c)   typeof((c)) n = (c);
 #define AUTO_CAST(c) (typeof((c)))
 
+// Misc
 #define error_t(type)       choice_t(type, char*)
 #define error_data(c, data) AUTO_CAST(c) {.type=CHOICE_0,.d0=(data)}
 #define error_msg(c, msg)   AUTO_CAST(c) {.type=CHOICE_1,.d1=(msg)}
@@ -47,9 +48,5 @@
 #define array_get(a, i)                 ((a).ptr[i])
 #define array_size(a)                   ((a).at)
 #define array_ptr(a)                    ((a).ptr)
-#define array_index_of(a, v, i)         {   *(i) = 0;                                   \
-                                            while ((*(i)) < (a).at)                     \
-                                                if ((a).ptr[(*(i))++] == (v)) break;    \
-                                            if ((*(i))-- == (a).at) *(i) = -1;          }
 
 #endif//_UTIL_H

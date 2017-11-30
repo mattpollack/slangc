@@ -4,24 +4,37 @@
 #include "util.h"
 #include "lexer.h"
 
-typedef struct namespace_s   {} namespace_t; // probably todo later
-
-
 typedef struct application_s {} application_t;
-typedef struct match_body_s  {} match_body_t;
-typedef struct match_s       {} match_t;
-typedef struct signature_s   {} signature_t;
+typedef struct match_body_s  {
+    
+} match_body_t;
+
+typedef enum {
+    SIG_IDENTIFIER,
+    SIG_LIST,
+    SIG_FUNC
+} sig_type;
+
+typedef struct signature_s {
+    sig_type             type;
+    bool                 option;
+    struct signature_s * next;
+    
+    union {
+	token_t              identifier;
+	struct signature_s * body;
+    };
+} signature_t;
 
 // Function definition
 typedef struct function_s {
-    signature_t  signature;
-    match_body_t body;
+    signature_t  * signature;
+    match_body_t   body;
 } function_t;
 
-// Access control data types
+// Base node types
 typedef enum {
     AST_FUNCTION,
-    AST_NAMESPACE,
 } base_type;
 
 // Access control struct
@@ -31,7 +44,6 @@ typedef struct base_s {
     
     union {
 	function_t  f;
-	namespace_t n;
     };
 } base_t;
 

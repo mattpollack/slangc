@@ -32,6 +32,7 @@ typedef enum {
     CLOSE_BRACKET, // ]
     
     VBAR,          // |
+    OPTION,        // ?
 
     // Special
     UNDERSCORE, // pattern matching,
