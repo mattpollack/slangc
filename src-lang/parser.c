@@ -27,17 +27,86 @@ void parser_destroy(parser_t * parser) {
 #define ERROR_SET(msg)				\
     parser->error = true;			\
     parser->error_msg = (msg)
+
 #define ERROR_BREAK				\
     if (parser->error)				\
 	break
 
-static match_body_t parse_match_body(parser_t * parser) {
-    match_body_t res;
-    
-    ERROR_SET("TODO: match_body");
+static expression_t parse_expression(parser_t * parser) {
+    expression_t res;
+
+    ERROR_SET("TODO parse expression");
     
     return res;
 }
+
+static match_expr_t parse_match_expr(parser_t * parser) {
+    match_expr_t res;
+    token_t      peek = LEXER_PEEK;
+    
+    if /**/ (peek.type == IDENTIFIER) {
+	res.type       = MATCH_EXPR_IDENTIFIER;
+	res.identifier = LEXER_NEXT;
+    }
+    else if (peek.type == INTEGER) {
+	res.type    = MATCH_EXPR_L_INTEGER;
+	res.integer = LEXER_NEXT;
+    }
+    else {
+	LEXER_NEXT;
+	ERROR_SET("Unexpected token in match expr");
+    }
+
+    return res;
+}
+
+static match_body_t parse_match_body(parser_t * parser) {
+    match_body_t res;
+
+    if (!LEXER_NEXT_IF(VBAR)) {
+	ERROR_SET("Match body must begin with '|'");
+	return res;
+    }
+
+    array_init(res.args);
+
+    while (!LEXER_NEXT_IF(EQUAL)) {
+	match_expr_t arg = parse_match_expr(parser);
+	ERROR_BREAK;
+	array_push(match_expr_t, res.args, arg);
+    }
+
+    if (parser->error) {
+	array_destroy(res.args);
+	return res;
+    }
+
+    res.body = parse_expression(parser);
+    
+    return res;
+}
+
+/** NOTE: Incomplete parse match statement for use later?
+static match_statement_t parse_match(parser_t * parser, bool skip_match) {
+    match_statement_t res;
+    array_init(res.body);
+    
+    if (!skip_match && !LEXER_NEXT_IF(MATCH)) {
+	ERROR_SET("Match must begin with token 'match'");
+	return res;
+    }
+
+    while (LEXER_PEEK.type == VBAR) {
+	match_body_t body = parse_match_body(parser);
+	ERROR_BREAK;
+    }
+
+    if (parser->error) {
+	array_destroy(res.body);
+    }
+
+    return res;
+    }*/
 
 static signature_t * parse_signature(parser_t * parser) {
     signature_t * res = malloc(sizeof(signature_t));
@@ -83,6 +152,8 @@ static signature_t * parse_signature(parser_t * parser) {
 	res->identifier = LEXER_NEXT;
     }
     else {
+	LEXER_NEXT; // Consume the unexpected token for error checking
+	            // purposes.
 	ERROR_SET("Unexpected token when parsing signature");
     }
 
@@ -103,7 +174,17 @@ static function_t parse_function(parser_t * parser) {
     if (parser->error)
 	return res;
 
-    res.body = parse_match_body(parser);
+    array_init(res.body);
+
+    while (LEXER_PEEK.type == VBAR) {
+	match_body_t body = parse_match_body(parser);
+	ERROR_BREAK;
+
+	array_push(match_body_t, res.body, body);
+    }
+
+    if (parser->error)
+	array_destroy(res.body);
 
     return res;
 }
@@ -125,6 +206,7 @@ ast_t * parser_parse(parser_t * parser) {
 	    node.f          = parse_function(parser);
 	}
 	else {
+	    LEXER_NEXT;
 	    ERROR_SET("Unexpected token at base level");
 	}
 

@@ -69,6 +69,7 @@ static token_type_t reserved_list[] = {
     {.type = LET,            .string = "let"},
     {.type = IF,             .string = "if"},
     {.type = EL,             .string = "el"},
+    {.type = MATCH,          .string = "match"},
 
     // end of token list
     {.type = TOKEN_LIST_END, .string = "\0"},
@@ -110,12 +111,12 @@ lexer_t * lexer_create() {
     lexer_t * res = malloc(sizeof(lexer_t));
     res->token.type = BUFFER_START;
     res->token.buffer = 0;
-    res->token.ln = 0;
-    res->token.cn = 0;
+    res->token.ln = 1;
+    res->token.cn = 1;
     res->token.length = 0;
     res->buffer = 0;
-    res->ln = 0;
-    res->cn = 0;
+    res->ln = 1;
+    res->cn = 1;
 
     return res;
 }
@@ -153,7 +154,7 @@ token_t lexer_next(lexer_t * lexer) {
     // Skip WS
     while (WS(*lexer->buffer)) {
 	if (*lexer->buffer == '\n') {
-	    lexer->cn = 0;
+	    lexer->cn = 1;
 	    ++lexer->ln;
 	}
 	else {
@@ -263,7 +264,7 @@ token_t lexer_next(lexer_t * lexer) {
 
 		lexer->buffer += parsed;
 
-		return res;
+		return (lexer->token = res);
 	    }
 	    
 	    ++ptr;
@@ -277,7 +278,7 @@ token_t lexer_next(lexer_t * lexer) {
     error.cn = lexer->cn;
     error.length = 0;
 
-    return error;
+    return (lexer->token = error);
 }
 
 bool lexer_next_if(lexer_t * lexer, token_type t) {

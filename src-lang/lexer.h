@@ -18,6 +18,7 @@ typedef enum {
     IF,
     EL,
     DEF,
+    MATCH,
     
     // Dynamic
     INTEGER,

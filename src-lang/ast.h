@@ -4,9 +4,37 @@
 #include "util.h"
 #include "lexer.h"
 
-typedef struct application_s {} application_t;
+typedef struct expression_s {
+    // ..
+} expression_t;
+
+typedef struct match_expr_s {
+    /*
+      TYPES
+      -----
+      x
+      [x:y: ... :zs]
+      any literal value NOTE: lexer only parses integers
+      
+      
+     */
+    enum  {
+	MATCH_EXPR_IDENTIFIER,
+	MATCH_EXPR_L_INTEGER,
+    } type;
+    union {
+	token_t identifier;
+	token_t integer;
+    };
+} match_expr_t;
+
 typedef struct match_body_s  {
-    
+    /*
+      args: [match_expr]
+      body: expr
+     */
+    array_t(match_expr_t) args;
+    expression_t          body;
 } match_body_t;
 
 typedef enum {
@@ -28,8 +56,8 @@ typedef struct signature_s {
 
 // Function definition
 typedef struct function_s {
-    signature_t  * signature;
-    match_body_t   body;
+    signature_t           * signature;
+    array_t(match_body_t)   body;
 } function_t;
 
 // Base node types
