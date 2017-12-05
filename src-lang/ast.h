@@ -5,7 +5,29 @@
 #include "lexer.h"
 
 typedef struct expression_s {
-    // ..
+    /*
+      THE HARDEST PART
+      ----------------
+      appl expr expr...
+      (expr)
+      integer
+      float
+      string
+      
+
+     */
+    enum  {
+	EXPR_APPLICATION,
+	EXPR_IDENTIFIER,
+	EXPR_L_INTEGER,
+    } type;
+
+    union {
+	/* application */
+	array_t(struct expression_s) application;
+	token_t                      identifier;
+	token_t                      integer;
+    };
 } expression_t;
 
 typedef struct match_expr_s {

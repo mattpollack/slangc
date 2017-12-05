@@ -40,13 +40,11 @@ void error_print(parser_t * parser) {
 int main(int argc, char ** argv) {
     printf("## slang 0.0.0\n");
 
-
     char * raw =
-	"func test (a [a?]? b) \n"
+	"func fib (int int) \n"
 	"| 0 = 1 \n"
-	"| 1 = 2 \n"
-	"| 2 = 3 \n"
-	"| 3 = 4 \n";
+	"| 1 = 1 \n"
+	"| n = (add (fib (sub n 1)) (fib (sub n 2))) \n";
     parser_t * parser = parser_create(raw);
     ast_t    * res    = parser_parse(parser);
 

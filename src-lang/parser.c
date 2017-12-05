@@ -35,7 +35,30 @@ void parser_destroy(parser_t * parser) {
 static expression_t parse_expression(parser_t * parser) {
     expression_t res;
 
-    ERROR_SET("TODO parse expression");
+    if /**/ (LEXER_NEXT_IF(OPEN_PAREN)) {
+	res.type = EXPR_APPLICATION;
+	array_init(res.application);
+
+	while (!LEXER_NEXT_IF(CLOSE_PAREN)) {
+	    expression_t expr = parse_expression(parser);
+	    ERROR_BREAK;
+	}
+
+	if (parser->error) {
+	    array_destroy(res.application);
+	}
+    }
+    else if (LEXER_PEEK.type == IDENTIFIER) {
+	res.type       = EXPR_IDENTIFIER;
+	res.identifier = LEXER_NEXT;
+    }
+    else if (LEXER_PEEK.type == INTEGER) {
+	res.type    = EXPR_L_INTEGER;
+	res.integer = LEXER_NEXT;
+    }
+    else {
+	ERROR_SET("Unexpected token when parsing expression");
+    }
     
     return res;
 }
