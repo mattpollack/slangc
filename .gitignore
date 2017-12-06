@@ -1,4 +1,3 @@
 *~
 build/
-build-lang.sh
-build-vm.sh
+*.sh
