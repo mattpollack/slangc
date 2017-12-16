@@ -34,6 +34,7 @@ typedef enum {
     
     VBAR,          // |
     OPTION,        // ?
+    ARROW, // ->
 
     // Special
     UNDERSCORE, // pattern matching,

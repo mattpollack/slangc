@@ -1,67 +1,87 @@
 #include "parser.h"
+#include "error.h"
 
-void error_print(parser_t * parser) {
-    if (parser->error) {
-	printf("%d:%d: %s\n",
-	       parser->lexer->ln,
-	       parser->lexer->cn,
-	       parser->error_msg);
-	
-	char * curr = parser->lexer->token.buffer;
-	int i = 0;
-
-	while (curr[0] != '\n' &&
-	       curr    != parser->buffer) {
-	    ++i;
-	    --curr;
-	}
-
-	if (curr[0] == '\n') {
-	    --i;
-	    ++curr;
-	}
-	
-	while (curr[0] != '\n' &&
-	       curr[0] != '\0') {
-	    printf("%c", curr[0]);
-	    ++curr;
-	}
-
-	printf("\n");
-
-        for (; i > 0; --i) {
-	    printf(" ");
-	}
-
-	printf("^\n");
-    }
-}
+#define DEBUG 1
 
 int main(int argc, char ** argv) {
     printf("## slang 0.0.0\n");
 
     char * raw =
-	"func fib (int int) \n"
-	"| 0 = 1 \n"
-	"| 1 = 1 \n"
-	"| n = (add (fib (sub n 1)) (fib (sub n 2))) \n";
+	"func fib int int {\n"
+	"  0 -> 1; \n"
+	"  1 -> 1; \n"
+	"  n -> fib (n - 1) + fib (n - 2);\n"
+	"}\n";
     parser_t * parser = parser_create(raw);
     ast_t    * res    = parser_parse(parser);
 
-    if (parser->error) {
-	error_print(parser);
-    }
+    if (DEBUG)
+	printf("\n-- RAW PRINT --\n%s---------------\n\n", raw);
     
+    if (parser->error) {
+	error_t e = error_create(&parser->lexer->token, raw, parser->error_msg);
+	error_print(&e);
+    }
+
+    if (DEBUG && !parser->error)
+	ast_print(res);
+    
+    ast_destroy(res);
     parser_destroy(parser);
 }
 
 /*
 
-func fib (int int)
-| 0 = 1
-| 1 = 1
-| n = fib (n - 1) + fib (n - 2)
+type list a = a (list a) | empty
 
+func fib int int {
+  0 -> 1
+  1 -> 1
+  n -> (+ (fib (- n 1)) (fib (- n 2)))
+  n -> fib (n - 1) + fib (n + 2)
+}
 
+func main [string] IO {
+  []     -> IO;
+  [x:xs] ->
+    match res {
+      ? -> print "Cannot parse int from x";
+      n -> print n " " (main xs);
+    }
+}
+
+GRAMMAR
+-------
+
+base
+: function
+| type
+
+function
+: "func" identifier type_list function_body
+
+function_body
+: "{" match_body_list "}"
+
+match
+: "match" expression "{" match_body_list "}"
+
+match_body_list
+: match_body match_body_list
+| match_body
+
+match_body
+: match_expr_list "->" expression
+
+match_expr_list
+: match_expr match_expr_list
+| match_expr
+
+match_expr
+: identifier
+| number
+
+type 
+: 
 
 */

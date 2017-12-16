@@ -104,5 +104,6 @@ typedef struct ast_s {
 ast_t * ast_create();
 void    ast_destroy(ast_t * ast);
 int     ast_push(ast_t * ast, base_t node);
+void    ast_print(ast_t * ast);
 
 #endif

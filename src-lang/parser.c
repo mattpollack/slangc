@@ -182,7 +182,7 @@ static signature_t * parse_signature(parser_t * parser) {
 
     if (parser->error) {
 	free(res);
-	return 0;
+	return res;
     }
 
     res->option = LEXER_NEXT_IF(OPTION);

@@ -37,6 +37,7 @@ void token_print(token_t token) {
     case CLOSE_BRACKET:printf("]"); break;
     case VBAR:         printf("|"); break;
     case OPTION:       printf("?"); break;
+    case ARROW:        printf("->"); break;
 	
     case UNDERSCORE:   printf("_"); break;
 	
@@ -79,6 +80,7 @@ static token_type_t token_list[] = {
     {.type = CONCAT,         .string = "++"},
     {.type = GRE,            .string = ">="},
     {.type = LEE,            .string = "<="},
+    {.type = ARROW,          .string = "->"},
     
     {.type = IN,             .string = "in"},
     
