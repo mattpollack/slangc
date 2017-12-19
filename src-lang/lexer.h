@@ -13,6 +13,7 @@ typedef enum {
     // Reserved
     NAMESPACE,
     FUNC,
+    TYPE,
     LET,
     IN,
     IF,
@@ -39,6 +40,7 @@ typedef enum {
     // Special
     UNDERSCORE, // pattern matching,
                 // partial application
+    EXPR_END,
     
     // Binary infix
     EQUAL,

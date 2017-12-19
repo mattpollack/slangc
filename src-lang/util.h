@@ -27,10 +27,10 @@
 #define AUTO_CAST(c) (typeof((c)))
 
 // Misc
-#define error_t(type)       choice_t(type, char*)
-#define error_data(c, data) AUTO_CAST(c) {.type=CHOICE_0,.d0=(data)}
-#define error_msg(c, msg)   AUTO_CAST(c) {.type=CHOICE_1,.d1=(msg)}
-#define is_error(e)         (e.type==CHOICE_1)
+//#define error_t(type)       choice_t(type, char*)
+//#define error_data(c, data) AUTO_CAST(c) {.type=CHOICE_0,.d0=(data)}
+//#define error_msg(c, msg)   AUTO_CAST(c) {.type=CHOICE_1,.d1=(msg)}
+//#define is_error(e)         (e.type==CHOICE_1)
 
 #define true                            1
 #define false                           0

@@ -1,10 +1,9 @@
-#include <string.h>
+#include "error.h"
 #include "parser.h"
-#include "lexer.h"
 
 parser_t * parser_create(char * raw) {
     parser_t * res = malloc(sizeof(parser_t));
-    res->error = false;
+    res->error = error_create(raw);
     res->lexer = lexer_create();
     res->lexer->buffer = raw;
     res->buffer = 0;
@@ -24,223 +23,215 @@ void parser_destroy(parser_t * parser) {
 #define LEXER_PEEK lexer_peek(parser->lexer)
 #define LEXER_NEXT_IF(t) lexer_next_if(parser->lexer, (t))
 
-#define ERROR_SET(msg)				\
-    parser->error = true;			\
-    parser->error_msg = (msg)
-
-#define ERROR_BREAK				\
-    if (parser->error)				\
-	break
-
-static expression_t parse_expression(parser_t * parser) {
-    expression_t res;
-
-    if /**/ (LEXER_NEXT_IF(OPEN_PAREN)) {
-	res.type = EXPR_APPLICATION;
-	array_init(res.application);
-
-	while (!LEXER_NEXT_IF(CLOSE_PAREN)) {
-	    expression_t expr = parse_expression(parser);
-	    ERROR_BREAK;
-	}
-
-	if (parser->error) {
-	    array_destroy(res.application);
-	}
+#define ERROR        parser->error.set
+#define ERROR_SET(m) error_set_msg(&parser->error, m)
+#define ERROR_EXIT					\
+    if (ERROR) {					\
+	ast_destroy(ast);				\
+	return 0;					\
     }
-    else if (LEXER_PEEK.type == IDENTIFIER) {
-	res.type       = EXPR_IDENTIFIER;
-	res.identifier = LEXER_NEXT;
-    }
-    else if (LEXER_PEEK.type == INTEGER) {
-	res.type    = EXPR_L_INTEGER;
-	res.integer = LEXER_NEXT;
+
+ast_t * parse_integer(parser_t * parser) {
+    if (LEXER_PEEK.type == INTEGER) {
+	ast_t * ast = ast_create();
+	ast->type   = AST_INTEGER;
+	ast->value  = LEXER_NEXT;
+
+	return ast;
     }
     else {
-	ERROR_SET("Unexpected token when parsing expression");
+	ERROR_SET("Unexpected token when parsing integer");
+	return 0;
     }
-    
-    return res;
 }
 
-static match_expr_t parse_match_expr(parser_t * parser) {
-    match_expr_t res;
-    token_t      peek = LEXER_PEEK;
-    
-    if /**/ (peek.type == IDENTIFIER) {
-	res.type       = MATCH_EXPR_IDENTIFIER;
-	res.identifier = LEXER_NEXT;
-    }
-    else if (peek.type == INTEGER) {
-	res.type    = MATCH_EXPR_L_INTEGER;
-	res.integer = LEXER_NEXT;
+ast_t * parse_identifier(parser_t * parser) {
+    if (LEXER_PEEK.type == IDENTIFIER) {
+	ast_t * ast = ast_create();
+	ast->type   = AST_IDENTIFIER;
+	ast->value  = LEXER_NEXT;
+
+	return ast;
     }
     else {
-	LEXER_NEXT;
-	ERROR_SET("Unexpected token in match expr");
+	ERROR_SET("Unexpected token when parsing identifier");
+	return 0;
     }
-
-    return res;
 }
 
-static match_body_t parse_match_body(parser_t * parser) {
-    match_body_t res;
+ast_t * parse_expression(parser_t * parser, bool skip_end) {
+    ast_t * ast = ast_create();
+    ast->type = AST_EXPR;
 
-    if (!LEXER_NEXT_IF(VBAR)) {
-	ERROR_SET("Match body must begin with '|'");
-	return res;
-    }
-
-    array_init(res.args);
-
-    while (!LEXER_NEXT_IF(EQUAL)) {
-	match_expr_t arg = parse_match_expr(parser);
-	ERROR_BREAK;
-	array_push(match_expr_t, res.args, arg);
-    }
-
-    if (parser->error) {
-	array_destroy(res.args);
-	return res;
-    }
-
-    res.body = parse_expression(parser);
+    while (LEXER_PEEK.type != EXPR_END) LEXER_NEXT;
     
-    return res;
+    if (!skip_end && !LEXER_NEXT_IF(EXPR_END)) {
+	ERROR_SET("Expression must end with a semi-colon");
+	ast_destroy(ast);
+	return 0;
+    }
+    
+    return ast;
 }
 
-/** NOTE: Incomplete parse match statement for use later?
-static match_statement_t parse_match(parser_t * parser, bool skip_match) {
-    match_statement_t res;
-    array_init(res.body);
-    
-    if (!skip_match && !LEXER_NEXT_IF(MATCH)) {
-	ERROR_SET("Match must begin with token 'match'");
-	return res;
-    }
+ast_t * parse_match_body(parser_t * parser) {
+    ast_t * ast = ast_create();
+    ast->type = AST_MATCH_BODY;
 
-    while (LEXER_PEEK.type == VBAR) {
-	match_body_t body = parse_match_body(parser);
-	ERROR_BREAK;
-    }
+    for (token_t peek = LEXER_PEEK;; peek = LEXER_PEEK) {
+	ast_t * next = 0;
 
-    if (parser->error) {
-	array_destroy(res.body);
-    }
+	/**/ if (peek.type == IDENTIFIER) {
+	    next = parse_identifier(parser);
+	}
+	else if (peek.type == INTEGER) {
+	    next = parse_integer(parser);
+	}
+	else {
+	    break;
+	}
 
-    return res;
-    }*/
+	if (ERROR) {
+	    ast_destroy(next);
+	    ast_destroy(ast);
 
-static signature_t * parse_signature(parser_t * parser) {
-    signature_t * res = malloc(sizeof(signature_t));
-    res->next = 0;
-
-    if /**/ (LEXER_NEXT_IF(OPEN_PAREN)) {
-	res->type = SIG_FUNC;
-	res->body = 0;
-        
-	signature_t * ptr = 0;
-	
-	while (!LEXER_NEXT_IF(CLOSE_PAREN)) {
-	    if (ptr == 0) {
-		res->body = parse_signature(parser);
-		ptr = res->body;
+	    return 0;
+	}
+	else {
+	    if (ast->args == 0) {
+		ast->args = next;
 	    }
 	    else {
-		ptr->next = parse_signature(parser);
-		ptr = ptr->next;
-	    }
-
-	    ERROR_BREAK;
-	}
-
-	if (parser->error) {
-	    while (res->body != 0) {
-		ptr = res->body->next;
-		free(res->body);
-		res->body = ptr;
+		ast_push(ast->args, next);
 	    }
 	}
     }
-    else if (LEXER_NEXT_IF(OPEN_BRACKET)) {
-	res->type = SIG_LIST;
-	res->body = parse_signature(parser);
-	
-	if (!parser->error && !LEXER_NEXT_IF(CLOSE_BRACKET)) {
-	    ERROR_SET("List signature must end with a close bracket");
+
+    if (LEXER_NEXT_IF(ARROW)) {
+	ast->body = parse_expression(parser, false);
+
+	if (ERROR) {
+	    ast_destroy(ast);
+	    return 0;
 	}
-    }
-    else if (LEXER_PEEK.type == IDENTIFIER) {
-	res->type = SIG_IDENTIFIER;
-	res->identifier = LEXER_NEXT;
     }
     else {
-	LEXER_NEXT; // Consume the unexpected token for error checking
-	            // purposes.
-	ERROR_SET("Unexpected token when parsing signature");
+	ERROR_SET("Arrow must proceed match body arguments");
+	ast_destroy(ast);
+	return 0;
     }
-
-    if (parser->error) {
-	free(res);
-	return res;
-    }
-
-    res->option = LEXER_NEXT_IF(OPTION);
     
-    return res;
+    return ast;
 }
 
-static function_t parse_function(parser_t * parser) {
-    function_t res;
-    res.signature = parse_signature(parser);
+ast_t * parse_signature(parser_t * parser, bool is_array) {
+    ast_t * ast   = ast_create();
+    ast->type     = AST_SIGNATURE;
+    ast->is_array = false;
+    
+    for (token_t peek = LEXER_PEEK;; peek = LEXER_PEEK) {
+	ast_t * next = 0;
+	
+	if (peek.type == IDENTIFIER) {
+	    next = parse_identifier(parser);
+	}
+	else if (LEXER_NEXT_IF(OPEN_PAREN)) {
+	    next = parse_signature(parser, false);
+	    
+	    if (!LEXER_NEXT_IF(CLOSE_PAREN)) {
+		ERROR_SET("Function signature must end with a close paren");
+	    }
+	}
+	else if (LEXER_NEXT_IF(OPEN_BRACKET)) {
+	    next = parse_signature(parser, true);
 
-    if (parser->error)
-	return res;
+	    if (!LEXER_NEXT_IF(CLOSE_BRACKET)) {
+		ERROR_SET("Array signature must end with a close bracket");
+	    }
+	}
+	else {
+	    break;
+	}
 
-    array_init(res.body);
+	if (ERROR) {
+	    ast_destroy(next);
+	    ast_destroy(ast);
 
-    while (LEXER_PEEK.type == VBAR) {
-	match_body_t body = parse_match_body(parser);
-	ERROR_BREAK;
+	    return 0;
+	}
+	else {
+	    if (ast->body == 0) {
+		ast->body = next;
+	    }
+	    else {
+		ast_push(ast->body, next);
+	    }
+	}
 
-	array_push(match_body_t, res.body, body);
+	if (is_array)
+	    break;
+    }
+	    
+    return ast;
+}
+
+ast_t * parse_func(parser_t * parser, bool skip_reserved) {
+    if (!skip_reserved && !LEXER_NEXT_IF(FUNC)) {
+	ERROR_SET("Expected token 'func' at the beginning of a function");
+	return 0;
     }
 
-    if (parser->error)
-	array_destroy(res.body);
+    ast_t * ast     = ast_create();
+    ast->type       = AST_FUNC;
+    ast->identifier = parse_identifier(parser); ERROR_EXIT;
+    ast->signature  = parse_signature(parser, false);  ERROR_EXIT;
 
-    return res;
+    if (LEXER_NEXT_IF(OPEN_BRACE)) {
+        while (!LEXER_NEXT_IF(CLOSE_BRACE)) {
+	    ast_t * next = parse_match_body(parser);
+
+	    if (ERROR) {
+		ast_destroy(next);
+		ast_destroy(ast);
+
+		return 0;
+	    }
+	    
+	    if (ast->body == 0) {
+		ast->body = next;
+	    }
+	    else {
+		ast_push(ast->body, next);
+	    }
+	}
+    }
+    else {
+	ERROR_SET("Function body must begin with an open brace");
+	ast_destroy(ast);
+	
+	return 0;
+    }
+    
+    return ast;
 }
 
 ast_t * parser_parse(parser_t * parser) {
     ast_t * ast = ast_create();
 
-    while (!LEXER_NEXT_IF(BUFFER_END) && !parser->error) {
-	base_t node;
-	
-	if /**/ (LEXER_NEXT_IF(FUNC)) {
-	    if (LEXER_PEEK.type != IDENTIFIER) {
-		ERROR_SET("Expected identifier");
-		break;
-	    }
-	    
-	    node.identifier = LEXER_NEXT;
-	    node.type       = AST_FUNCTION;
-	    node.f          = parse_function(parser);
+    while (LEXER_PEEK.type != BUFFER_END) {
+	if (LEXER_NEXT_IF(FUNC)) {
+	    ast_push(ast, parse_func(parser, true));
 	}
 	else {
-	    LEXER_NEXT;
 	    ERROR_SET("Unexpected token at base level");
+	    break;
 	}
 
-	ERROR_BREAK;
-
-	ast_push(ast, node);
+	if (ERROR) break;
     }
 
-    if (parser->error) {
+    if (ERROR) {
 	ast_destroy(ast);
-	
 	return 0;
     }
     else {

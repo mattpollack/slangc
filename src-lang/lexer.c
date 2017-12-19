@@ -12,6 +12,7 @@ void token_print(token_t token) {
     case BUFFER_END:   printf("END");               break;
     case NAMESPACE:    printf("NAMESPACE");         break;
     case FUNC:         printf("FUNC");              break;
+    case TYPE:         printf("TYPE");              break;
     case DEF:          printf("DEF");               break;
     case LET:          printf("LET");               break;
     case IN:           printf("IN");                break;
@@ -40,6 +41,7 @@ void token_print(token_t token) {
     case ARROW:        printf("->"); break;
 	
     case UNDERSCORE:   printf("_"); break;
+    case EXPR_END:     printf(";"); break;
 	
     case EQUAL:        printf("="); break;
     case CONCAT:       printf("++"); break;
@@ -66,6 +68,7 @@ typedef struct {
 static token_type_t reserved_list[] = {
     {.type = NAMESPACE,      .string = "NAMESPACE"},
     {.type = FUNC,           .string = "func"},
+    {.type = TYPE,           .string = "type"},
     {.type = DEF,            .string = "def"},
     {.type = LET,            .string = "let"},
     {.type = IF,             .string = "if"},
@@ -96,6 +99,7 @@ static token_type_t token_list[] = {
     {.type = OPTION,         .string = "?"},
     
     {.type = UNDERSCORE,     .string = "_"},
+    {.type = EXPR_END,       .string = ";"},
     
     {.type = EQUAL,          .string = "="},
     {.type = ADD,            .string = "+"},

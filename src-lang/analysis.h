@@ -17,15 +17,4 @@
 
  */
 
-typedef struct analyser_params_s {
-    // ..
-} analyser_params_t;
-
-typedef struct analyzer_s {
-    analyser_params_t   params;
-    ast_t             * ast;
-    bool                error;
-    char              * error_msg;
-} analyser_t;
-
 #endif 
