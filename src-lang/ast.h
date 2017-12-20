@@ -30,14 +30,14 @@ typedef struct ast_s {
     union {
 	// identifier, literal
 	token_t value;
-
-	// signature
-	bool is_array;
 	
 	// func, type
 	struct {
 	    // func, type, match_body
 	    struct ast_s * body;
+
+	    // signature
+	    bool is_array;
 
 	    union {
 		// match_body
@@ -56,8 +56,10 @@ typedef struct ast_s {
 } ast_t;
 
 ast_t * ast_create();
-bool    ast_push(ast_t *, ast_t *);
+bool    ast_push(ast_t **, ast_t *);
+bool    ast_equal(ast_t *, ast_t *);
 void    ast_destroy(ast_t *);
+void    ast_print(ast_t *, int);
 
 #endif
 
@@ -92,5 +94,13 @@ match_expr_list
 match_expr
 : identifier
 | number
+
+expression
+: "(" expression ")"
+| identifier
+| number
+| match
+| func
+| 
 
 */

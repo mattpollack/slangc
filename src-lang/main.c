@@ -1,4 +1,5 @@
 #include "parser.h"
+#include "analysis.h"
 
 #define DEBUG 1
 
@@ -21,7 +22,7 @@ int main(int argc, char ** argv) {
     ast_t    * res    = parser_parse(parser);
 
     if (DEBUG) {
-	printf("\n-- RAW PRINT --\n%s---------------\n\n", raw);
+	printf("\n-- RAW PRINT --\n%s\n", raw);
     }
 
     if (parser->error.set) {
@@ -30,6 +31,12 @@ int main(int argc, char ** argv) {
 	token_print(lexer_next(parser->lexer));
 	printf("\n");
     }
+    
+    /*if (DEBUG) {
+	printf("-- AST PRINT --\n");
+	ast_print(res, 0);
+	printf("\n");
+	}*/
     
     ast_destroy(res);
     parser_destroy(parser);

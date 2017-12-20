@@ -20,5 +20,10 @@ void error_set_msg(error_t * error, char * msg) {
 }
 
 void error_print(error_t * e) {
-    printf("%d:%d: %s\n", e->ln, e->cn, e->msg);
+    if (e->inspect) {
+
+    }
+    else {
+	printf("ERROR: %s\n", e->msg);
+    }
 }

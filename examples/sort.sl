@@ -24,6 +24,6 @@ func parse_int string int? {
   
 func main [string] int {
   args -> 
-    print "hello world";
-    0;
+    | print "hello world";
+    | 0;
 }

@@ -3,18 +3,22 @@
 
 #include "ast.h"
 
-/*
-  ANALYSIS
-  --------
-  type checking
-   - arg types
-   - match_expr types
-  pattern checking
-   - runtime list size
-   - exhaustion
-  undefined refs
-  compile time evaluation on literals
+typedef struct entry_s {
+    struct entry_s * next;
+    char           * name;
+    ast_t          * data;
+} entry_t;
 
- */
+typedef struct env_s {
+    entry_t * names;
+} env_t;
+
+env_t * env_create();
+void    env_destroy(env_t *);
+ast_t * env_get  (env_t *, char *);
+void    env_set  (env_t *, char *, ast_t *);
+void    env_unset(env_t *, char *);
+
+typedef ast_t * (* env_ast_)(ast_t *, env_t *);
 
 #endif 
