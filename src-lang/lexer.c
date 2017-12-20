@@ -60,6 +60,18 @@ void token_print(token_t token) {
     }
 }
 
+bool token_equal(token_t a, token_t b) {
+    if (a.length == b.length) {
+	for (int i = 0; i < a.length; ++i)
+	    if (a.buffer[i] != b.buffer[i])
+		return false;
+
+	return true;
+    }
+
+    return false;
+}
+
 typedef struct {
     token_type  type;
     char       *string;

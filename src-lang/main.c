@@ -1,10 +1,23 @@
 #include "parser.h"
 #include "analysis.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 int main(int argc, char ** argv) {
-    printf("## slang 0.0.0\n");
+/* Sketchpad, before escaping     
+  __
+ /     |     * SLANG             
+ \\\\  |     * 0.0.0             
+  __/  |___  * Matt Pollack      
+*/
+    char * version =
+	"  __\n"
+	" /     |     * SLANG\n"
+	" \\\\\\\\  |     * 0.0.0\n"
+	"  __/  |___  * Matt Pollack\n\n"
+	;
+    
+    printf("%s", version);
 
     char * raw =
 	"func fib int int {\n"
@@ -14,9 +27,11 @@ int main(int argc, char ** argv) {
 	"}\n"
 	"\n"
 	"func main [string] int {\n"
-	"  args -> print (fib 5);\n"
+	"  args -> \n"
+	"    | print (fib 5)\n"
+	"    | 0;\n"
 	"}\n"
-	;
+        ;
     
     parser_t * parser = parser_create(raw);
     ast_t    * res    = parser_parse(parser);
@@ -27,16 +42,7 @@ int main(int argc, char ** argv) {
 
     if (parser->error.set) {
 	error_print(&parser->error);
-	printf("%d:%d ", parser->lexer->ln, parser->lexer->cn);
-	token_print(lexer_next(parser->lexer));
-	printf("\n");
     }
-    
-    /*if (DEBUG) {
-	printf("-- AST PRINT --\n");
-	ast_print(res, 0);
-	printf("\n");
-	}*/
     
     ast_destroy(res);
     parser_destroy(parser);

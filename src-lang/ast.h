@@ -5,12 +5,20 @@
 
 /* Global enum union style ast node
  */
+struct ast_s;
+
+typedef struct ast_s * (* ast_native_t)(struct ast_s *);
+
 typedef struct ast_s {
     enum  {
+	AST_NATIVE,
+	
 	AST_IDENTIFIER,
 	AST_INTEGER,
 	
 	AST_FUNC,
+
+	AST_DO,
 	
 	AST_SIGNATURE,
 
@@ -29,7 +37,8 @@ typedef struct ast_s {
     
     union {
 	// identifier, literal
-	token_t value;
+	token_t      value;
+	ast_native_t eval;
 	
 	// func, type
 	struct {

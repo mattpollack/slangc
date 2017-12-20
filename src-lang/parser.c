@@ -24,7 +24,8 @@ void parser_destroy(parser_t * parser) {
 #define LEXER_NEXT_IF(t) lexer_next_if(parser->lexer, (t))
 
 #define ERROR        parser->error.set
-#define ERROR_SET(m) error_set_msg(&parser->error, m)
+#define ERROR_SET(m)				\
+    error_set_msg_inspect(&parser->error, m, &parser->lexer->token)
 #define ERROR_EXIT					\
     if (ERROR) {					\
 	ast_destroy(ast);				\
@@ -90,6 +91,15 @@ ast_t * parse_expression(parser_t * parser, bool is_inline) {
 		ERROR_SET("Expected close paren");
 	    }
 	}
+	else if (LEXER_PEEK.type == VBAR) {
+	    next = ast_create();
+	    next->type = AST_DO;
+
+	    while (LEXER_NEXT_IF(VBAR) && !ERROR)
+		ast_push(&next->body, parse_expression(parser, false));
+
+	    is_inline = true;
+	}
 	else {
 	    next = parse_expression_atomic(parser);
 	}
@@ -106,6 +116,12 @@ ast_t * parse_expression(parser_t * parser, bool is_inline) {
 	else {
 	    ast_push(&ast->body, next);
 	}
+    }
+
+    if (ast->body == 0) {
+	ERROR_SET("Unexpected end of expression");
+	ast_destroy(ast);
+	return 0;
     }
 
     if (!is_inline && !LEXER_NEXT_IF(EXPR_END)) {
@@ -244,7 +260,7 @@ ast_t * parse_func(parser_t * parser, bool skip_reserved) {
 }
 
 ast_t * parser_parse(parser_t * parser) {
-    ast_t * ast = ast_create();
+    ast_t * ast = 0;
 
     while (LEXER_PEEK.type != BUFFER_END) {
 	if (LEXER_NEXT_IF(FUNC)) {
@@ -258,11 +274,7 @@ ast_t * parser_parse(parser_t * parser) {
 	if (ERROR) break;
     }
 
-    if (ERROR) {
-	ast_destroy(ast);
-	return 0;
-    }
-    else {
-	return ast;
-    }
+    ERROR_EXIT;
+    
+    return ast;
 }

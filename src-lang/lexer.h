@@ -64,6 +64,7 @@ typedef struct {
 } token_t;
 
 void token_print(token_t token);
+bool token_equal(token_t, token_t);
 
 typedef struct lexer_s {
     token_t         token;

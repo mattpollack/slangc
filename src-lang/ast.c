@@ -45,22 +45,31 @@ bool ast_equal(ast_t * a, ast_t * b) {
     switch (a->type) {
     case AST_FUNC:
 	result =
-	    ast_equal(a->body,      b->body) &&
-	    ast_equal(a->signature, b->signature);
+	    ast_equal(a->identifier, b->identifier) &&
+	    ast_equal(a->body,       b->body) &&
+	    ast_equal(a->signature,  b->signature);
 	break;
+
+    case AST_DO:
+    case AST_EXPR:
     case AST_SIGNATURE:
 	result = ast_equal(a->body, b->body);
 	break;
+	
     case AST_MATCH_BODY:
 	result =
 	    ast_equal(a->args, b->args) &&
 	    ast_equal(a->body, b->body);
 	break;
-    case AST_EXPR:
-	result = true;
+
+	// COMPARING TOKENS
+    case AST_INTEGER:
+    case AST_IDENTIFIER:
+	result = token_equal(a->value, b->value);
 	break;
+	
     default:
-	printf("AST_EQUAL: undefined type, default is false");
+	printf("AST_EQUAL: undefined type '%d', default is false", a->type);
     }
 
     return result && ast_equal(a->next, b->next);
@@ -81,6 +90,9 @@ void ast_destroy(ast_t * n) {
 	break;
     case AST_MATCH_BODY:
 	ast_destroy(n->args);
+	ast_destroy(n->body);
+	break;
+    case AST_DO:
 	ast_destroy(n->body);
 	break;
     case AST_EXPR:
@@ -134,6 +146,12 @@ void ast_print(ast_t * ast, int tab) {
 	    ast_print(ast->body, tab + 1);
 	    break;
 	    
+	case AST_DO:
+	    print_tab(tab); printf("DO {\n");
+	    ast_print(ast->body, tab + 1);
+	    print_tab(tab); printf("}\n");
+	    break;
+	    
 	case AST_EXPR:
 	    print_tab(tab); printf("EXPRESSION {\n");
 	    ast_print(ast->body, tab + 1);
@@ -147,7 +165,7 @@ void ast_print(ast_t * ast, int tab) {
 	case AST_APPLICATION:
 	default:
 	    print_tab(tab);
-	    printf("TODO print node of this type\n");
+	    printf("TODO print node of this type: '%d'\n", ast->type);
 	}
     }
 }

@@ -21,6 +21,7 @@ typedef struct error_s {
 
 error_t error_create(char * buffer);
 void    error_set_msg(error_t * error, char * msg);
+void    error_set_msg_inspect(error_t * error, char * msg, token_t * token);
 void    error_print(error_t * e);
 
 #endif
