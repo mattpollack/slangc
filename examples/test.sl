@@ -1,16 +1,11 @@
-func parse_int string int? {
-  []     -> ?;
-  [x:xs] -> 
-    match (x >= '0' && x <= '9') {
-      true -> x - '0';
-    }
+func fib int int {
+  0 -> 1;
+  1 -> 1;
+  n -> add (fib (sub n 1)) (fib (sub n 2));
 }
 
 func main [string] int {
-  []  -> 0;
-  [x] -> 
-    match (parse_int x) {
-      ? -> -1;
-      n -> n;
-    }
+  args ->
+    | print (fib 5);
+    | 0;
 }

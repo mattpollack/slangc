@@ -10,6 +10,7 @@ error_t error_create(char * buffer) {
     res.ptr     = 0;
     res.ln      = 0;
     res.cn      = 0;
+    res.length  = 0;
     
     return res;
 }
@@ -25,9 +26,12 @@ void error_set_msg_inspect(error_t * error, char * msg, token_t * token) {
     error->ptr     = token->buffer;
     error->ln      = token->ln;
     error->cn      = token->cn;
+    error->length  = token->length;
 }
 
 void error_print(error_t * e) {
+    if (!e->set) return;
+    
     if (e->inspect) {
 	printf("ERROR [%d:%d] %s\n", e->ln, e->cn, e->msg);
 
@@ -58,8 +62,15 @@ void error_print(error_t * e) {
 	    }
 	}
 
+	if (ptr[0] == '\0')
+	    printf("\n ");
+
 	// Print cursor
-	for (l = 0; l < e->cn; ++l) printf(" ");
+	for (l = 1; l < e->cn; ++l)
+	    printf(" ");
+
+	for (l = 1; l < e->length; ++l)
+	    printf("~");
 	
 	printf("^\n");
     }

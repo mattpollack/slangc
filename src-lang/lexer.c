@@ -169,6 +169,7 @@ static int str_cmp(char * a, char * b) {
 }
 
 token_t lexer_next(lexer_t * lexer) {
+ BEGIN:
     // Skip WS
     while (WS(*lexer->buffer)) {
 	if (*lexer->buffer == '\n') {
@@ -200,8 +201,6 @@ token_t lexer_next(lexer_t * lexer) {
 	    int parsed = str_cmp(ptr->string, lexer->buffer);
 	    
 	    if (parsed > 0) {
-		lexer->cn += parsed;
-		
 		token_t res;
 		res.type = ptr->type;
 		res.buffer = lexer->buffer;
@@ -210,6 +209,7 @@ token_t lexer_next(lexer_t * lexer) {
 		res.length = parsed;
 
 		lexer->buffer += parsed;
+		lexer->cn += parsed;
 
 		return res;
 	    }
@@ -223,6 +223,8 @@ token_t lexer_next(lexer_t * lexer) {
 	char * start = lexer->buffer;
 	char * ptr   = lexer->buffer + 1;
 
+	int c = lexer->cn;
+	
 	while (ALPHA(*ptr) ||
 	       DIGIT(*ptr) ||
 	       *ptr == '_') {
@@ -234,7 +236,7 @@ token_t lexer_next(lexer_t * lexer) {
 	res.type = IDENTIFIER;
 	res.buffer = start;
 	res.ln = lexer->ln;
-	res.cn = lexer->cn;
+	res.cn = c;
 	res.length = ptr - start;
 
 	lexer->buffer = ptr;
@@ -247,6 +249,8 @@ token_t lexer_next(lexer_t * lexer) {
 	char * start = lexer->buffer;
 	char * ptr   = lexer->buffer;
 
+	int c = lexer->cn;
+
 	while (DIGIT(*ptr)) {
 	    ++ptr;
 	    ++lexer->cn;
@@ -256,7 +260,7 @@ token_t lexer_next(lexer_t * lexer) {
 	res.type = INTEGER;
 	res.buffer = start;
 	res.ln = lexer->ln;
-	res.cn = lexer->cn;
+	res.cn = c;
 	res.length = ptr - start;
 
 	lexer->buffer = ptr;
@@ -271,8 +275,6 @@ token_t lexer_next(lexer_t * lexer) {
 	    int parsed = str_cmp(ptr->string, lexer->buffer);
 	    
 	    if (parsed > 0) {
-		lexer->cn += parsed;
-		
 		token_t res;
 		res.type = ptr->type;
 		res.buffer = lexer->buffer;
@@ -281,11 +283,20 @@ token_t lexer_next(lexer_t * lexer) {
 		res.length = parsed;
 
 		lexer->buffer += parsed;
+		lexer->cn += parsed;
 
 		return (lexer->token = res);
 	    }
 	    
 	    ++ptr;
+	}
+    }
+
+    { // Comments
+	if (*lexer->buffer == '#') {
+	    while (*lexer->buffer != '\0' &&
+		   *lexer->buffer != '\n') ++lexer->buffer;
+	    goto BEGIN;
 	}
     }
 

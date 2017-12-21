@@ -17,6 +17,7 @@ typedef struct error_s {
     char * ptr;
     int    ln;
     int    cn;
+    int    length;
 } error_t;
 
 error_t error_create(char * buffer);

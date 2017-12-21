@@ -87,9 +87,20 @@ ast_t * parse_expression(parser_t * parser, bool is_inline) {
 	if (LEXER_NEXT_IF(OPEN_PAREN)) {
 	    next = parse_expression(parser, true);
 
-	    if (!ERROR && !LEXER_NEXT_IF(CLOSE_PAREN)) {
+	    // NOTE: When parsing a do block, beginning with a nested
+	    //       expression without a close paren, followed by
+	    //       another expression in the do block, it is
+	    //       improperly parsed as being a part of the nested
+	    //       expression, placing the error cursor at the end
+	    //       of the do block, when it should be at the
+	    //       beginning of the other expression.
+	    //
+	    //       | print (fib 5
+	    //       | 0;          ^ # proper spot
+	    //          ^            # current improper spot
+	    
+	    if (!ERROR && !LEXER_NEXT_IF(CLOSE_PAREN))
 		ERROR_SET("Expected close paren");
-	    }
 	}
 	else if (LEXER_PEEK.type == VBAR) {
 	    next = ast_create();
@@ -125,7 +136,7 @@ ast_t * parse_expression(parser_t * parser, bool is_inline) {
     }
 
     if (!is_inline && !LEXER_NEXT_IF(EXPR_END)) {
-	ERROR_SET("Expression must end with a semi-colon");
+	ERROR_SET("Unexpected token, expected end of expression ';'");
 	ast_destroy(ast);
 	return 0;
     }
@@ -170,7 +181,8 @@ ast_t * parse_match_body(parser_t * parser) {
 	}
     }
     else {
-	ERROR_SET("Arrow must proceed match body arguments");
+	LEXER_NEXT;
+	ERROR_SET("Unexpected token when parsing match body expression");
 	ast_destroy(ast);
 	return 0;
     }

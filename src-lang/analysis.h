@@ -19,6 +19,16 @@ ast_t * env_get  (env_t *, char *);
 void    env_set  (env_t *, char *, ast_t *);
 void    env_unset(env_t *, char *);
 
-typedef ast_t * (* env_ast_)(ast_t *, env_t *);
+typedef ast_t * (* env_ast_transformer_t)(ast_t *, env_t *);
+
+/*
+  
+  TODO
+  typecheck
+  undefined reference
+  ... 
+
+ */
+
 
 #endif 
