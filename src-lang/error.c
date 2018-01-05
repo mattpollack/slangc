@@ -30,13 +30,17 @@ void error_set_msg_inspect(error_t * error, char * msg, token_t * token) {
 }
 
 void error_print(error_t * e) {
-    if (!e->set) return;
+    if (!e->set || e == 0)
+	return;
     
     if (e->inspect) {
 	printf("ERROR [%d:%d] %s\n", e->ln, e->cn, e->msg);
 
 	int    l   = 0;
 	char * ptr = e->ptr;
+
+	if (ptr == 0)
+	    return;
 
 	// Start from the error ptr, work backwards to find either 2
 	// lines or the beginning of the src

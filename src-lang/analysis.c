@@ -74,3 +74,60 @@ void env_unset(env_t * env, char * name) {
 	last->next = ptr;
     }
 }
+
+ast_t * type_check(ast_t * ast, env_t * env) {
+    if (ast == 0)
+	return 0;
+
+    switch (ast->type) {
+    case AST_FUNC:
+    case AST_NATIVE:
+    case AST_IDENTIFIER:
+    case AST_INTEGER:
+    case AST_DO:
+    case AST_SIGNATURE:
+    case AST_TYPE:
+    case AST_TYPE_EXPR:
+    case AST_MATCH:
+    case AST_MATCH_BODY:
+    case AST_MATCH_EXPR_ARRAY:
+    case AST_EXPR:
+    case AST_APPLICATION:
+    default:
+	printf("TODO: typecheck type");
+    };
+	
+    return 0;
+}
+
+ast_t * type_infer(ast_t * ast, env_t * env) {
+    return 0;
+}
+
+ast_t * prepare(ast_t * ast, env_t * env) {
+    ast_t * main = 0;
+
+    /*
+      TODO
+      ----
+      Typecheck
+      Function constructors
+      - Populate env with the available references in scope
+      
+     */
+    
+    // Find main
+    for (ast_t * ptr = ast; ptr != 0; ptr = ptr->next)
+	if (ptr->type == AST_FUNC && token_equal_str(ptr->identifier->value, "main"))
+	    main = ptr;
+
+    if (main == 0) {
+	printf("ERROR: Slang program must contain a main function\n");
+
+	return 0;
+    }
+
+    
+
+    return 0;
+}

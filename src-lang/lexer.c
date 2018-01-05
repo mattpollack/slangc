@@ -61,6 +61,9 @@ void token_print(token_t token) {
 }
 
 bool token_equal(token_t a, token_t b) {
+    if (a.buffer == b.buffer &&
+	a.length == b.length) return true;
+    
     if (a.length == b.length) {
 	for (int i = 0; i < a.length; ++i)
 	    if (a.buffer[i] != b.buffer[i])
@@ -70,6 +73,14 @@ bool token_equal(token_t a, token_t b) {
     }
 
     return false;
+}
+
+bool token_equal_str(token_t a, char * str) {
+    for (int i = 0; i < a.length; ++i, ++str)
+	if (a.buffer[i] != str[0] || str[0] == '\0')
+	    return false;
+
+    return str[0] == '\0';
 }
 
 typedef struct {
@@ -110,7 +121,7 @@ static token_type_t token_list[] = {
     {.type = VBAR,           .string = "|"},
     {.type = OPTION,         .string = "?"},
     
-    {.type = UNDERSCORE,     .string = "_"},
+    /// {.type = UNDERSCORE,     .string = "_"},
     {.type = EXPR_END,       .string = ";"},
     
     {.type = EQUAL,          .string = "="},
@@ -219,15 +230,13 @@ token_t lexer_next(lexer_t * lexer) {
     }
 
     // Identifier
-    if (ALPHA(*lexer->buffer)) {
+    if (ALPHA(*lexer->buffer) || *lexer->buffer == '_') {
 	char * start = lexer->buffer;
 	char * ptr   = lexer->buffer + 1;
 
 	int c = lexer->cn;
 	
-	while (ALPHA(*ptr) ||
-	       DIGIT(*ptr) ||
-	       *ptr == '_') {
+	while (ALPHA(*ptr) || DIGIT(*ptr) || *ptr == '_') {
 	    ++ptr;
 	    ++lexer->cn;
 	}

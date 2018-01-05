@@ -2,7 +2,7 @@
 #include "analysis.h"
 #include "file.h"
 
-#define DEBUG 1
+#define DEBUG 0
 
 int main(int argc, char ** argv) {
     char * version =
@@ -16,16 +16,30 @@ int main(int argc, char ** argv) {
     
     file_t src = file_load("examples/test.sl");
 
+    if (DEBUG) {
+	printf("-- src begin --\n");
+	printf("%s\n", src.buffer);
+	printf("-- src end ----\n");
+    }
+
     if (src.buffer == 0) {
 	printf("Cannot find file '%s'\n", src.name);
     }
     else {
 	parser_t * parser = parser_create(src.buffer);
-	ast_t    * res    = parser_parse(parser);
-
-	error_print(&parser->error);
-
-	ast_destroy(res);
+	ast_t    * ast    = parser_parse(parser);
+	
+	if (parser->error.set) {
+	    error_print(&parser->error);
+	}
+	else {
+	    env_t * env    = env_create();
+	    ast_t * stage1 = prepare(ast, env);
+	    
+	    env_destroy(env);
+	}
+	
+	ast_destroy(ast);
 	parser_destroy(parser);
     }
     
